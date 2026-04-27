@@ -1,0 +1,83 @@
+__all__ = ["prefixTree"]
+
+from functools import partial
+
+from jax import core, dtypes
+from jax.core import ShapedArray
+from jax.interpreters import ad, batching, mlir, xla
+
+# from jax.lib import xla_client
+from jaxlib.hlo_helpers import custom_call
+
+
+# Public facing interface
+def prefixTree(in1, in2):
+    # Add necessary preprocessing code
+    return _prefixTree_prim.bind(in1, in2)
+
+
+# *********************************
+# *  SUPPORT FOR JIT COMPILATION  *
+# *********************************
+
+
+# For JIT compilation we need a function to evaluate the shape and dtype of the
+# outputs of our op for some given inputs
+def _prefixTree_abstract(in1, in2):
+    shape = in1.shape
+    dtype = dtypes.canonicalize_dtype(in1.dtype)
+    return ShapedArray(shape, dtype)
+
+
+# We also need a lowering rule to provide an MLIR "lowering" of out primitive.
+def _prefixTree_lowering(ctx, in1, in2):
+    # The inputs and outputs all have the same shape and memory layout
+    # so let's predefine this specification
+    dtype = mlir.ir.RankedTensorType(in1.type)
+    shape = dtype.shape
+    result_type = mlir.ir.RankedTensorType.get(shape, dtype.element_type)
+
+    return custom_call(
+        "prefixTree",
+        # Output types
+        result_types=[result_type],
+        # The inputs:
+        operands=[in1, in2],
+    ).results
+
+
+# **********************************
+# *  SUPPORT FOR FORWARD AUTODIFF  *
+# **********************************
+
+
+def _prefixTree_jvp(args, tangents):
+    raise NotImplementedError()
+
+
+# ************************************
+# *  SUPPORT FOR BATCHING WITH VMAP  *
+# ************************************
+
+
+# Our op already supports arbitrary dimensions so the batching rule is quite
+# simple. The jax.lax.linalg module includes some example of more complicated
+# batching rules if you need such a thing.
+def _prefixTree_batch(args, axes):
+    raise NotImplementedError()
+
+
+# *********************************************
+# *  BOILERPLATE TO REGISTER THE OP WITH JAX  *
+# *********************************************
+_prefixTree_prim = core.Primitive("prefixTree")
+# Change this to True if there are more than 1 output
+_prefixTree_prim.multiple_results = False
+_prefixTree_prim.def_impl(partial(xla.apply_primitive, _prefixTree_prim))
+_prefixTree_prim.def_abstract_eval(_prefixTree_abstract)
+
+mlir.register_lowering(_prefixTree_prim, _prefixTree_lowering)
+
+# Connect the JVP and batching rules
+ad.primitive_jvps[_prefixTree_prim] = _prefixTree_jvp
+batching.primitive_batchers[_prefixTree_prim] = _prefixTree_batch

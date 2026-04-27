@@ -1,0 +1,18 @@
+{
+  "db_info": {
+    "alice": {
+      "party_code": "alice",
+      "db_type": "MYSQL"
+    },
+    "bob": { "party_code": "bob", "db_type": "CSVDB" },
+    "carol": { "party_code": "carol", "db_type": "POSTGRESQL" }
+  },
+  "table_files": [
+    "generated_table_alice.json",
+    "table_alice.json",
+    "generated_table_bob.json",
+    "table_bob.json",
+    "generated_table_carol.json",
+    "table_carol.json"
+  ]
+}

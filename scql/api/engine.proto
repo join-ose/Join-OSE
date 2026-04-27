@@ -1,0 +1,174 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package scql.pb;
+
+option go_package = "proto-gen/scql";
+
+import "google/protobuf/empty.proto";
+import "libspu/spu.proto";
+import "api/common.proto";
+import "api/core.proto";
+import "api/status.proto";
+import "api/subgraph.proto";
+
+option cc_generic_services = true;
+
+service SCQLEngineService {
+  // Run the whole execution plan
+  rpc RunExecutionPlan(RunExecutionPlanRequest)
+      returns (RunExecutionPlanResponse);
+
+  // Query Job Status
+  rpc QueryJobStatus(QueryJobStatusRequest) returns (QueryJobStatusResponse);
+
+  // Stop Job
+  rpc StopJob(StopJobRequest) returns (Status);
+};
+
+message StopJobRequest {
+  string job_id = 1;
+  // job stop reason, it maybe
+  // - "Finish". Job ended normally.
+  // - "Timeout". Job timeout.
+  // - "Canceled". Job canceled by client, maybe triggered by CTRL+C
+  // - "Error". Exception caught when running.
+  // - "Killed". Killed by client.
+  // - or something else.
+  string reason = 2;
+}
+
+// A message carries all job session-level (execution plan level) information.
+message JobStartParams {
+  message Party {
+    // party code
+    string code = 1;
+    // party name
+    string name = 2;
+    // party host
+    string host = 3;
+    // party rank
+    int32 rank = 4;
+
+    // base64 encoded version of the DER encoded public key
+    //
+    // Example:
+    // # 1. generate private key
+    // $ openssl genpkey -algorithm ed25519 -out ed25519key.pem
+    // # 2. generate public key based on above private key
+    // $ openssl pkey -in ed25519key.pem -pubout
+    //
+    // # its output like below:
+    //
+    // -----BEGIN PUBLIC KEY-----
+    // BASE64 ENCODED DATA
+    // -----END PUBLIC KEY-----
+    //
+    // the field `public_key` should be the string between header "-----BEGIN
+    // PUBLIC KEY-----" and footer "-----END PUBLIC KEY-----"
+    string public_key = 5;
+  }
+
+  // This party code.
+  // It may be used to get this party information from <parties> below.
+  string party_code = 1;
+
+  // All parties that would jointly complete an execution plan.
+  repeated Party parties = 2;
+
+  // The job id
+  string job_id = 3;
+
+  // The spu runtime configuration.
+  spu.pb.RuntimeConfig spu_runtime_cfg = 4;
+
+  // The query job time zone, only support time offset, like: '+08:00'
+  string time_zone = 5;
+
+  LinkConfig link_cfg = 6;
+  PsiConfig psi_cfg = 7;
+  LogConfig log_cfg = 8;
+}
+
+message GraphChecksum {
+  bool check_graph_checksum = 1;
+  // map from rank to checksum
+  // It could be used to verify and ensure that engines execute the same
+  // graph.
+  map<string, string> sub_graph_checksums = 2;
+  string whole_graph_checksum = 3;
+}
+
+message RunExecutionPlanRequest {
+  JobStartParams job_params = 1;
+
+  SubGraph graph = 2;
+  GraphChecksum graph_checksum = 3;
+
+  // Whether the whole execution plan on the engine should be executed
+  // synchronously or asynchronously. By default, the execution plan is executed
+  // synchronously.
+  bool async = 4;
+
+  // Callback url, e.g.: "http://alice.com:8080/path/to/callback".
+  string callback_url = 5;
+  DebugOptions debug_opts = 6;
+}
+
+message RunExecutionPlanResponse {
+  Status status = 1;
+  // Output columns used to store result datas.
+  repeated Tensor out_columns = 2;
+  string job_id = 3;
+  // Code of party which finished the execution plan.
+  string party_code = 4;
+  // The number of rows affected by a select into, update, insert, or delete.
+  int64 num_rows_affected = 5;
+}
+
+message QueryJobStatusRequest {
+  string job_id = 1;
+}
+
+message QueryJobStatusResponse {
+  Status status = 1;
+  JobState job_state = 2;
+
+  JobProgress progress = 3;
+}
+
+// EngineResultCallback
+service EngineResultCallback {
+  // Engine report the plan result to scdb/broker/...
+  rpc Report(ReportRequest) returns (google.protobuf.Empty);
+}
+
+// After finishing running an execution plan, the Engine sends a ReportRequest
+// to result callback server (such as scdb/broker/...) to return the results.
+message ReportRequest {
+  // Status including whether the plan run was handled successfully,
+  // if not, error message and some more information included.
+  Status status = 1;
+  // Output columns.
+  repeated Tensor out_columns = 2;
+  // The job_id that this execution plan belongs to.
+  string job_id = 3;
+  // Code of party which finished the plan run.
+  string party_code = 4;
+  // The number of rows affected by a select into, update, insert, or delete.
+  int64 num_rows_affected = 5;
+}

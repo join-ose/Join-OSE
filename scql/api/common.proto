@@ -1,0 +1,112 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package scql.pb;
+option go_package = "proto-gen/scql";
+option java_package = "org.secretflow.scql";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// RequestHeader carries the user custom headers.
+message RequestHeader {
+  // Custom headers used to record custom information.
+  map<string, string> custom_headers = 1;
+}
+
+message DebugOptions {
+  bool enable_psi_detail_log = 1;
+}
+
+// (-- TODO: move SQLWarning to a proper place --)
+message SQLWarning {
+  // Description of the warning
+  string reason = 1;
+}
+
+// IOStats contains input/output statistics for a job, including bytes sent and
+// received, as well as the number of send and receive actions performed.
+message IOStats {
+  uint64 send_bytes = 1;
+  uint64 recv_bytes = 2;
+  uint64 send_actions = 3;
+  uint64 recv_actions = 4;
+}
+
+// StageInfo provides information about an individual stage within a running
+// job.
+message StageInfo {
+  // The name of the stage.
+  string name = 1;
+  // A brief summary describing the stage
+  string summary = 2;
+  // Stage start time
+  google.protobuf.Timestamp start_time = 3;
+  // Personalized details that may have different structures depending on the
+  // stage type.
+  google.protobuf.Any details = 4;
+}
+
+// JobProgress provides detailed information about the progress of a running
+// job.
+message JobProgress {
+  // Job start time
+  google.protobuf.Timestamp start_time = 1;
+  // The total number of stages planned for the job.
+  int32 stages_count = 2;
+  // The number of stages that have been executed so far.
+  int32 executed_stages = 3;
+  IOStats io_stats = 4;
+  // A list of currently running stages, providing insight into which parts of
+  // the job are active.
+  repeated StageInfo running_stages = 5;
+}
+
+enum JobState {
+  JOB_STATE_UNSPECIFIED = 0;
+  JOB_INITIALIZED = 1;
+  JOB_RUNNING = 2;
+  JOB_SUCCEEDED = 3;
+  JOB_FAILED = 4;
+  JOB_CANCELED = 5;
+}
+
+message LinkConfig {
+  int64 link_recv_timeout_sec = 1;
+  int64 link_throttle_window_size = 2;
+  int64 link_chunked_send_parallel_size = 3;
+  int64 http_max_payload_size = 4;
+}
+
+enum PsiAlgorithmType {
+  // auto means choosing psi type by engine
+  AUTO = 0;
+  ECDH = 1;
+  OPRF = 2;
+  RR22 = 3;
+}
+
+message PsiConfig {
+  int32 psi_curve_type = 1;
+  PsiAlgorithmType psi_type = 2;
+  // activated when psi_type is rr22
+  bool use_rr22_low_comm_mode = 3;
+}
+
+message LogConfig {
+  bool enable_session_logger_separation = 1;
+}

@@ -1,0 +1,148 @@
+# Copyright 2023 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//engine/bazel:scql.bzl", "scql_cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "tensor",
+    srcs = [
+        "tensor.cc",
+        "tensor_batch_reader.cc",
+    ],
+    hdrs = [
+        "tensor.h",
+        "tensor_batch_reader.h",
+    ],
+    deps = [
+        ":type",
+        "//api:core_cc_proto",
+        "//engine/util/disk:arrow_reader",
+        "//engine/util/disk:arrow_writer",
+        "@org_apache_arrow//:arrow",
+        "@yacl//yacl/base:exception",
+    ],
+)
+
+scql_cc_test(
+    name = "tensor_batch_reader_test",
+    srcs = ["tensor_batch_reader_test.cc"],
+    deps = [
+        ":tensor",
+        "//engine/core:tensor_constructor",
+        "//engine/util:filepath_helper",
+    ],
+)
+
+cc_library(
+    name = "tensor_builder",
+    srcs = ["tensor_builder.cc"],
+    hdrs = ["tensor_builder.h"],
+    deps = [
+        ":arrow_helper",
+        ":tensor",
+        ":tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "primitive_builder",
+    srcs = ["primitive_builder.cc"],
+    hdrs = ["primitive_builder.h"],
+    deps = [
+        ":arrow_helper",
+        ":tensor_builder",
+        "@org_apache_arrow//:arrow",
+    ],
+)
+
+scql_cc_test(
+    name = "primitive_builder_test",
+    srcs = ["primitive_builder_test.cc"],
+    linkopts = [
+        "-ldl",
+    ],
+    deps = [
+        ":primitive_builder",
+    ],
+)
+
+cc_library(
+    name = "string_tensor_builder",
+    srcs = ["string_tensor_builder.cc"],
+    hdrs = ["string_tensor_builder.h"],
+    deps = [":tensor_builder"],
+)
+
+scql_cc_test(
+    name = "string_tensor_builder_test",
+    srcs = ["string_tensor_builder_test.cc"],
+    linkopts = [
+        "-ldl",
+    ],
+    deps = [
+        ":string_tensor_builder",
+    ],
+)
+
+cc_library(
+    name = "arrow_helper",
+    hdrs = ["arrow_helper.h"],
+    deps = [
+        "@yacl//yacl/base:exception",
+    ],
+)
+
+cc_library(
+    name = "tensor_constructor",
+    srcs = ["tensor_constructor.cc"],
+    hdrs = ["tensor_constructor.h"],
+    deps = [
+        ":arrow_helper",
+        ":tensor",
+        "//engine/util/disk:arrow_writer",
+    ],
+)
+
+scql_cc_test(
+    name = "tensor_constructor_test",
+    srcs = ["tensor_constructor_test.cc"],
+    deps = [
+        ":tensor_constructor",
+        "//engine/util:filepath_helper",
+    ],
+)
+
+cc_library(
+    name = "type",
+    srcs = ["type.cc"],
+    hdrs = ["type.h"],
+    deps = [
+        "//api:core_cc_proto",
+        "@org_apache_arrow//:arrow",
+        "@spulib//libspu:spu",
+    ],
+)
+
+cc_library(
+    name = "tensor_slice",
+    srcs = ["tensor_slice.cc"],
+    hdrs = ["tensor_slice.h"],
+    deps = [
+        ":tensor",
+        ":tensor_constructor",
+        "@org_apache_arrow//:arrow",
+    ],
+)

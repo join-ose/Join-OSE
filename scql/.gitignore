@@ -1,0 +1,38 @@
+# docs
+docs/_build
+
+# bazel
+/bazel-*
+
+# go
+bin/*
+tool-bin/*
+/vendor
+
+# cloudide
+.cloudide/
+
+/compile_commands.json
+
+# clangd cache
+/external
+/.cache/
+scdb.db
+.vscode/launch.json
+logs/scdbserver.log
+
+# Translations
+*.mo
+*.pot
+
+*.pyc
+
+.venv
+
+# 排除 ide 文件
+.idea/
+# 排除mac本地文件
+*.DS_Store
+
+# ignore bazelrc for remote cache
+.remote.bazelrc

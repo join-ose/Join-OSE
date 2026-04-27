@@ -1,0 +1,241 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package scql.pb;
+
+option go_package = "proto-gen/scql";
+option java_package = "org.secretflow.scql";
+
+// Defines a tensor shape. A dimension can be either an integer value
+// or a symbolic variable. A symbolic variable represents an unknown
+// dimension.
+message TensorShape {
+  message Dimension {
+    oneof value {
+      int64 dim_value = 1;
+      string dim_param = 2;  // shape is unknown.
+    };
+  };
+  repeated Dimension dim = 1;
+}
+
+enum PrimitiveDataType {
+  PrimitiveDataType_UNDEFINED = 0;
+
+  // Numeric types
+  INT8 = 1;     // the 8-bit signed integer type
+  INT16 = 2;    // the 16-bit signed integer type
+  INT32 = 3;    // the 32-bit signed integer type
+  INT64 = 4;    // the 64-bit signed integer type
+  FLOAT32 = 5;  // the 32-bit binary floating point type
+  FLOAT64 = 6;  // the 64-bit binary floating point type
+
+  // Other types
+  BOOL = 7;
+  STRING = 8;
+  // DATETIME and TIMESTAMP
+  DATETIME = 9;    // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+  TIMESTAMP = 10;  // seconds since '1970-01-01 00:00:00' UTC
+}
+
+// Tensor options.
+enum TensorOptions {
+  // A tensor with data.
+  VALUE = 0;
+  // A tensor with reference (URI).
+  REFERENCE = 1;
+  // A tensor variable (declaration).
+  VARIABLE = 2;
+}
+
+enum TensorStatus {
+  // Unknown.
+  TENSORSTATUS_UNKNOWN = 0;
+
+  // Private.
+  TENSORSTATUS_PRIVATE = 1;
+
+  // Secret, usually in the form of secret sharing.
+  TENSORSTATUS_SECRET = 2;
+
+  // Ciphertext, usually in the form of homomorphic encryption ciphertext.
+  TENSORSTATUS_CIPHER = 3;
+
+  // Public.
+  TENSORSTATUS_PUBLIC = 4;
+}
+
+message TensorAnnotation {
+  TensorStatus status = 1;
+}
+
+// A tensor data representation.
+message Tensor {
+  // Tensor name.
+  string name = 1;
+
+  // Tensor shape.
+  // In SCQL cases, it's normally [M] (a vector with M elements).
+  TensorShape shape = 2;
+
+  // Tensor element type.
+  PrimitiveDataType elem_type = 3;
+
+  // Tensor options.
+  TensorOptions option = 4;
+
+  // Tensor annotation carries physical status information.
+  // It MUST be there if the <option> is "Reference"
+  TensorAnnotation annotation = 5;
+
+  // tensor content
+
+  // For int8, int16, int32 data types
+  repeated int32 int32_data = 6 [packed = true];
+  // For int64 and timestamp data types
+  repeated int64 int64_data = 7 [packed = true];
+  // For float32 data type
+  repeated float float_data = 8 [packed = true];
+  // For float64 data type
+  repeated double double_data = 9 [packed = true];
+  // For bool data type
+  repeated bool bool_data = 10 [packed = true];
+  // For string and datetime data types
+  repeated string string_data = 11;
+  // validity mask for data(int32_data/int64_data/...), size can be zero(all
+  // data valid) or the same as data, where item false means NULL, true means
+  // valid value
+  repeated bool data_validity = 13 [packed = true];
+  // Tensor reference nums, internally used to delete tensor immediately
+  int32 ref_num = 12;
+}
+
+// Attribute value, it may be a tensor.
+message AttributeValue {
+  oneof value {
+    Tensor t = 1;
+
+    // More may be added later, say, Map, Tuple, etc.
+  }
+}
+
+message TensorList {
+  repeated Tensor tensors = 1;
+}
+
+// An execution node
+message ExecNode {
+  // Node name, should be unique in an execution plan,
+  // its format may be like "${name}.${id}"
+  string node_name = 1;
+
+  // Operator type that this node refers to.
+  string op_type = 2;
+
+  // Input arguments.
+  map<string, TensorList> inputs = 3;
+
+  // Output arguments.
+  map<string, TensorList> outputs = 4;
+
+  // Static attributes may be used in this node.
+  // It's used to replace the default value defined
+  // in the operator definition if needed.
+  map<string, AttributeValue> attributes = 5;
+}
+
+message FormalAttribute {
+  string name = 1;
+
+  // A complete attribute definition string.
+  string definition = 2;
+}
+
+// Formal parameter options.
+enum FormalParameterOptions {
+  // Undefined.
+  FORMALPARAMETEROPTIONS_UNDEFINED = 0;
+
+  // This is a single formal parameter.
+  FORMALPARAMETEROPTIONS_SINGLE = 1;
+
+  // This is an optional formal parameter.
+  FORMALPARAMETEROPTIONS_OPTIONAL = 2;
+
+  // This is a variadic formal parameter.
+  FORMALPARAMETEROPTIONS_VARIADIC = 3;
+}
+
+// Formal parameter representation of a SCQL operator.
+// It normally includes formal parameter name, type, and some annotations.
+message FormalParameter {
+  string param_name = 1;
+
+  // Formal parameter option.
+  FormalParameterOptions option = 2;
+
+  // Formal parameter shape information in the case of "tensor".
+  // In the case of scql, the tensor is actually a vector.
+  TensorShape param_shape = 3;
+
+  // A complete parameter definition string.
+  string definition = 4;
+
+  // Name of parameter status constraint(template name), e.g. "T" for template
+  // name. It's like the `T` in `template<class T> ...` for C++. The parameter
+  // with the same T should of the same tensor status.
+  string parameter_status_constraint_name = 5;
+}
+
+// TensorStatus list
+message TensorStatusList {
+  // TensorStatus list.
+  repeated TensorStatus status = 1;
+}
+
+// An SCQL operator definition representation.
+message OperatorDef {
+  // Operator name.
+  string name = 1;
+
+  // Operator input formal parameters.
+  repeated FormalParameter input_params = 2;
+
+  // Operator output formal parameters.
+  // For SCQL case, there may be only one output.
+  repeated FormalParameter output_params = 3;
+
+  // Operator attribute parameters.
+  repeated FormalAttribute attribute_params = 4;
+
+  // Default attribute values needed when running the operator.
+  // The default values may be replaced when creating an execution plan
+  // from a SCQL query.
+  map<string, AttributeValue> default_attribute_values = 5;
+
+  // A complete operator definition string.
+  string definition = 6;
+
+  // Map of key for parameter_status_constraint_name, value for TensorStatusList
+  // e.g.: {"T": TensorStatusList{status: [TENSORSTATUS_PRIVATE]}}
+  map<string, TensorStatusList> param_status_constraints = 7;
+}
+
+// TODO: move PartyId to a proper place.
+message PartyId {
+  string code = 1;  // party code
+}

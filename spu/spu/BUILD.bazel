@@ -1,0 +1,171 @@
+# Copyright 2021 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:packaging.bzl", "py_package")
+load("//bazel:spu.bzl", "spu_py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(
+    [
+        "exported_symbols.lds",
+        "version_script.lds",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+pybind_extension(
+    name = "libspu",
+    srcs = ["libspu.cc"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "-Wl,-exported_symbols_list,$(location //spu:exported_symbols.lds)",
+        ],
+        "//conditions:default": [
+            "-Wl,--version-script,$(location //spu:version_script.lds)",
+        ],
+    }),
+    deps = [
+        ":exported_symbols.lds",
+        ":version_script.lds",
+        "@spulib//libspu:version",
+        "@spulib//libspu/compiler:compile",
+        "@spulib//libspu/compiler/common:compilation_context",
+        "@spulib//libspu/core:logging",
+        "@spulib//libspu/device:api",
+        "@spulib//libspu/device:io",
+        "@spulib//libspu/device/pphlo:pphlo_executor",
+        "@yacl//yacl/link",
+    ],
+)
+
+pybind_extension(
+    name = "libpsi",
+    srcs = ["libpsi.cc"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "-Wl,-exported_symbols_list,$(location //spu:exported_symbols.lds)",
+        ],
+        "//conditions:default": [
+            "-Wl,--version-script,$(location //spu:version_script.lds)",
+        ],
+    }),
+    deps = [
+        ":exported_symbols.lds",
+        ":version_script.lds",
+        "@psi//psi/apps/psi_launcher:launch",
+        "@psi//psi/legacy:memory_psi",
+        "@yacl//yacl/link",
+    ],
+)
+
+spu_py_library(
+    name = "api",
+    srcs = [
+        "api.py",
+        # "spu_pb2.py",
+        # "@spulib//libspu:spu_py_proto",
+    ],
+    data = [
+        ":libspu.so",
+    ],
+)
+
+py_proto_library(
+    name = "psi_py_proto",
+    deps = ["@psi//psi/proto:psi_proto"],
+)
+
+py_proto_library(
+    name = "link_py_proto",
+    deps = ["@yacl//yacl/link:link_proto"],
+)
+
+py_proto_library(
+    name = "psi_v2_py_proto",
+    deps = ["@psi//psi/proto:psi_v2_proto"],
+)
+
+# Hack generated protobuf due to https://github.com/protocolbuffers/protobuf/issues/1491
+genrule(
+    name = "psi_v2_py_proto_fixed",
+    srcs = [":psi_v2_py_proto"],
+    outs = ["psi_v2_pb2.py"],
+    cmd = "sed 's#from yacl.link import#from . import#g;s#from psi.proto import#from . import#g;s#psi.proto.psi_v2_pb2#spu.psi_pb2#g' $(SRCS) > $(OUTS)",
+)
+
+genrule(
+    name = "psi_py_proto_fixed",
+    srcs = [":psi_py_proto"],
+    outs = ["psi_pb2.py"],
+    cmd = "sed 's/psi.proto.psi_pb2/spu.psi_pb2/g' $(SRCS) > $(OUTS)",
+)
+
+genrule(
+    name = "pir_py_proto_fixed",
+    srcs = [":pir_py_proto"],
+    outs = ["pir_pb2.py"],
+    cmd = """
+    sed "s/psi.proto.pir_pb2/spu.pir_pb2/g" $(SRCS) > $(OUTS)
+    """,
+)
+
+genrule(
+    name = "link_py_proto_fixed",
+    srcs = [":link_py_proto"],
+    outs = ["link_pb2.py"],
+    cmd = "sed 's/yacl.link.link_pb2/link.pir_pb2/g' $(SRCS) > $(OUTS)",
+)
+
+spu_py_library(
+    name = "psi",
+    srcs = [
+        "psi.py",
+        ":link_py_proto_fixed",
+        ":pir_py_proto_fixed",
+        ":psi_py_proto_fixed",
+        ":psi_v2_py_proto_fixed",
+    ],
+    data = [
+        ":libpsi.so",
+        ":libspu.so",
+    ],
+)
+
+py_proto_library(
+    name = "pir_py_proto",
+    deps = ["@psi//psi/proto:pir_proto"],
+)
+
+spu_py_library(
+    name = "init",
+    srcs = [
+        "__init__.py",
+        "version.py",
+        ":api",
+        ":psi",
+        "//spu/experimental:experimentals",
+        "//spu/intrinsic:all_intrinsics",
+        "//spu/utils:simulation",
+    ],
+)
+
+py_package(
+    name = "_lib_deps",
+    deps = [
+        ":api",
+    ],
+)

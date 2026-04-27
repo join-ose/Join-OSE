@@ -1,0 +1,66 @@
+---
+name: Golangci-Lint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - '.golangci-lint.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.go'
+      - '.golangci-lint.yml'
+
+env:
+  GO_VERSION: 1.24
+  GOLANGCI_LINT_VERSION: v2.0
+
+permissions:
+  # Required: allow read access to the content for analysis.
+  contents: read
+  # Optional: allow read access to pull request. Use with `only-new-issues` option.
+  pull-requests: read
+
+jobs:
+  detect-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - id: set-modules
+        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+
+  golangci-lint:
+    needs: detect-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint ${{ matrix.modules }}
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          working-directory: ${{ matrix.modules }}

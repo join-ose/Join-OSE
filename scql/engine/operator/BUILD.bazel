@@ -1,0 +1,1137 @@
+# Copyright 2023 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//engine/bazel:scql.bzl", "scql_cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "all_ops_register",
+    srcs = ["all_ops_register.cc"],
+    hdrs = ["all_ops_register.h"],
+    deps = [
+        ":arithmetic",
+        ":arrow_func",
+        ":broadcast_to",
+        ":bucket",
+        ":case_when",
+        ":cast",
+        ":coalesce",
+        ":compare",
+        ":concat",
+        ":constant",
+        ":copy",
+        ":dump_file",
+        ":filter",
+        ":filter_by_index",
+        ":group",
+        ":group_agg",
+        ":group_he_sum",
+        ":if",
+        ":if_null",
+        ":in",
+        ":insert_table",
+        ":is_null",
+        ":join",
+        ":limit",
+        ":logical",
+        ":make_private",
+        ":make_public",
+        ":make_share",
+        ":oblivious_group_agg",
+        ":oblivious_group_mark",
+        ":publish",
+        ":reduce",
+        ":replicate",
+        ":run_sql",
+        ":secret_join",
+        ":shape",
+        ":shuffle",
+        ":sort",
+        ":trigonometric",
+        ":unary",
+        ":unique",
+        ":window",
+        "//engine/framework:registry",
+    ],
+)
+
+scql_cc_test(
+    name = "all_ops_register_test",
+    srcs = ["all_ops_register_test.cc"],
+    deps = [
+        ":all_ops_register",
+    ],
+)
+
+cc_library(
+    name = "run_sql",
+    srcs = ["run_sql.cc"],
+    hdrs = ["run_sql.h"],
+    deps = [
+        "//engine/framework:operator",
+    ],
+)
+
+scql_cc_test(
+    name = "run_sql_test",
+    srcs = ["run_sql_test.cc"],
+    deps = [
+        ":run_sql",
+        ":test_util",
+        "//engine/datasource:datasource_adaptor_mgr",
+        "//engine/datasource:embed_router",
+        "@abseil-cpp//absl/debugging:failure_signal_handler",
+        "@abseil-cpp//absl/debugging:symbolize",
+        "@abseil-cpp//absl/flags:parse",
+        "@org_pocoproject_poco//:poco",
+    ],
+)
+
+cc_library(
+    name = "join",
+    srcs = ["join.cc"],
+    hdrs = ["join.h"],
+    deps = [
+        "//engine/core:tensor_slice",
+        "//engine/exe:flags",
+        "//engine/framework:operator",
+        "//engine/util:communicate_helper",
+        "//engine/util/psi:batch_provider",
+        "//engine/util/psi:cipher_intersection",
+        "//engine/util/psi:detail_logger",
+        "//engine/util/psi:ub_helper",
+        "@msgpack-c//:msgpack",
+        "@psi//psi/algorithm/ecdh:ecdh_psi",
+        "@psi//psi/algorithm/ecdh/ub_psi:ecdh_oprf_psi",
+        "@psi//psi/algorithm/rr22:common",
+        "@psi//psi/cryptor:cryptor_selector",
+    ],
+)
+
+scql_cc_test(
+    name = "join_test",
+    srcs = ["join_test.cc"],
+    deps = [
+        ":join",
+        ":test_util",
+        "//engine/core:primitive_builder",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "test_util",
+    srcs = ["test_util.cc"],
+    hdrs = ["test_util.h"],
+    deps = [
+        "//engine/datasource:datasource_adaptor_mgr",
+        "//engine/datasource:router",
+        "//engine/framework:exec",
+        "//engine/framework:operator",
+        "//engine/framework:session",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@googletest//:gtest",
+        "@spulib//libspu/core:config",
+    ],
+)
+
+cc_library(
+    name = "filter_by_index",
+    srcs = ["filter_by_index.cc"],
+    hdrs = ["filter_by_index.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "filter_by_index_test",
+    srcs = ["filter_by_index_test.cc"],
+    deps = [
+        ":filter_by_index",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "make_share",
+    srcs = ["make_share.cc"],
+    hdrs = ["make_share.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "@spulib//libspu/device:io",
+    ],
+)
+
+scql_cc_test(
+    name = "make_share_test",
+    srcs = ["make_share_test.cc"],
+    deps = [
+        ":make_share",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "publish",
+    srcs = ["publish.cc"],
+    hdrs = ["publish.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+    ],
+)
+
+scql_cc_test(
+    name = "publish_test",
+    srcs = ["publish_test.cc"],
+    deps = [
+        ":publish",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "binary_base",
+    srcs = ["binary_base.cc"],
+    hdrs = ["binary_base.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:context_util",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+    ],
+)
+
+cc_library(
+    name = "binary_test",
+    hdrs = ["binary_test.h"],
+    deps = [
+        ":all_ops_register",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "arithmetic",
+    srcs = ["arithmetic.cc"],
+    hdrs = ["arithmetic.h"],
+    deps = [
+        ":binary_base",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+    ],
+)
+
+scql_cc_test(
+    name = "arithmetic_test",
+    srcs = ["arithmetic_test.cc"],
+    deps = [
+        ":arithmetic",
+        ":binary_test",
+    ],
+)
+
+cc_library(
+    name = "make_private",
+    srcs = ["make_private.cc"],
+    hdrs = ["make_private.h"],
+    deps = [
+        "//engine/core:string_tensor_builder",
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "make_private_test",
+    srcs = ["make_private_test.cc"],
+    deps = [
+        ":make_private",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "filter",
+    srcs = ["filter.cc"],
+    hdrs = ["filter.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:public_helper",
+        "@spulib//libspu/kernel/hlo:indexing",
+    ],
+)
+
+scql_cc_test(
+    name = "filter_test",
+    srcs = ["filter_test.cc"],
+    deps = [
+        ":filter",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "make_public",
+    srcs = ["make_public.cc"],
+    hdrs = ["make_public.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:type_cast",
+    ],
+)
+
+scql_cc_test(
+    name = "make_public_test",
+    srcs = ["make_public_test.cc"],
+    deps = [
+        ":make_public",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "compare",
+    srcs = ["compare.cc"],
+    hdrs = ["compare.h"],
+    deps = [
+        ":binary_base",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+    ],
+)
+
+scql_cc_test(
+    name = "compare_test",
+    srcs = ["compare_test.cc"],
+    deps = [
+        ":binary_test",
+        ":compare",
+    ],
+)
+
+cc_library(
+    name = "logical",
+    srcs = ["logical.cc"],
+    hdrs = ["logical.h"],
+    deps = [
+        ":binary_base",
+        "//engine/util:spu_io",
+        "@spulib//libspu/kernel/hlo:basic_unary",
+    ],
+)
+
+scql_cc_test(
+    name = "logical_test",
+    srcs = ["logical_test.cc"],
+    deps = [
+        ":binary_test",
+        ":logical",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "copy",
+    srcs = ["copy.cc"],
+    hdrs = ["copy.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:table_util",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "copy_test",
+    srcs = ["copy_test.cc"],
+    deps = [
+        ":copy",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "in",
+    srcs = ["in.cc"],
+    hdrs = ["in.h"],
+    deps = [
+        "//engine/exe:flags",
+        "//engine/framework:operator",
+        "//engine/util/psi:batch_provider",
+        "//engine/util/psi:cipher_intersection",
+        "//engine/util/psi:detail_logger",
+        "//engine/util/psi:ub_helper",
+        "@psi//psi/algorithm/ecdh:ecdh_psi",
+        "@psi//psi/algorithm/ecdh/ub_psi:ecdh_oprf_psi",
+        "@psi//psi/algorithm/rr22:common",
+        "@psi//psi/cryptor:cryptor_selector",
+    ],
+)
+
+scql_cc_test(
+    name = "in_test",
+    srcs = ["in_test.cc"],
+    deps = [
+        ":in",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "constant",
+    srcs = ["constant.cc"],
+    hdrs = ["constant.h"],
+    deps = [
+        "//engine/core:primitive_builder",
+        "//engine/core:string_tensor_builder",
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "constant_test",
+    srcs = ["constant_test.cc"],
+    deps = [
+        ":constant",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "dump_file",
+    srcs = ["dump_file.cc"],
+    hdrs = ["dump_file.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:filepath_helper",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "dump_file_test",
+    srcs = ["dump_file_test.cc"],
+    deps = [
+        ":dump_file",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+        "@brpc//:butil",
+    ],
+)
+
+cc_library(
+    name = "insert_table",
+    srcs = ["insert_table.cc"],
+    hdrs = ["insert_table.h"],
+    deps = [
+        "//engine/datasource:odbc_connector",
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+        "@abseil-cpp//absl/strings",
+    ],
+)
+
+scql_cc_test(
+    name = "insert_table_test",
+    srcs = ["insert_table_test.cc"],
+    deps = [
+        ":insert_table",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_binary(
+    name = "insert_table_mysql_pg_test",
+    srcs = ["insert_table_mysql_pg_test.cc"],
+    deps = [
+        ":insert_table",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "reduce",
+    srcs = ["reduce.cc"],
+    hdrs = ["reduce.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:const",
+        "@spulib//libspu/kernel/hlo:reduce",
+        "@spulib//libspu/kernel/hlo:sort",
+    ],
+)
+
+scql_cc_test(
+    name = "reduce_test",
+    srcs = ["reduce_test.cc"],
+    shard_count = 4,
+    deps = [
+        ":all_ops_register",
+        ":reduce",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "shape",
+    srcs = ["shape.cc"],
+    hdrs = ["shape.h"],
+    deps = [
+        "//engine/core:primitive_builder",
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "shape_test",
+    srcs = ["shape_test.cc"],
+    deps = [
+        ":shape",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "sort",
+    srcs = ["sort.cc"],
+    hdrs = ["sort.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:table_util",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:const",
+        "@spulib//libspu/kernel/hlo:sort",
+    ],
+)
+
+scql_cc_test(
+    name = "sort_test",
+    srcs = ["sort_test.cc"],
+    deps = [
+        ":sort",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "oblivious_group_mark",
+    srcs = ["oblivious_group_mark.cc"],
+    hdrs = ["oblivious_group_mark.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:casting",
+        "@spulib//libspu/kernel/hlo:const",
+        "@spulib//libspu/kernel/hlo:geometrical",
+    ],
+)
+
+scql_cc_test(
+    name = "oblivious_group_mark_test",
+    srcs = ["oblivious_group_mark_test.cc"],
+    deps = [
+        ":oblivious_group_mark",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "oblivious_group_agg",
+    srcs = ["oblivious_group_agg.cc"],
+    hdrs = ["oblivious_group_agg.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:prefix_sum",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:constants",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:basic_ternary",
+        "@spulib//libspu/kernel/hlo:casting",
+        "@spulib//libspu/kernel/hlo:const",
+        "@spulib//libspu/kernel/hlo:geometrical",
+    ],
+)
+
+scql_cc_test(
+    name = "oblivious_group_agg_test",
+    srcs = ["oblivious_group_agg_test.cc"],
+    shard_count = 4,
+    deps = [
+        ":all_ops_register",
+        ":oblivious_group_agg",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "shuffle",
+    srcs = ["shuffle.cc"],
+    hdrs = ["shuffle.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:shuffle",
+    ],
+)
+
+scql_cc_test(
+    name = "shuffle_test",
+    srcs = ["shuffle_test.cc"],
+    deps = [
+        ":shuffle",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+        "//engine/util/psi:batch_provider",
+    ],
+)
+
+cc_library(
+    name = "broadcast_to",
+    srcs = ["broadcast_to.cc"],
+    hdrs = ["broadcast_to.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:shape_ops",
+    ],
+)
+
+scql_cc_test(
+    name = "broadcast_to_test",
+    srcs = ["broadcast_to_test.cc"],
+    deps = [
+        ":broadcast_to",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "unique",
+    srcs = ["unique.cc"],
+    hdrs = ["unique.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "unique_test",
+    srcs = ["unique_test.cc"],
+    deps = [
+        ":test_util",
+        ":unique",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "concat",
+    srcs = ["concat.cc"],
+    hdrs = ["concat.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:geometrical",
+    ],
+)
+
+scql_cc_test(
+    name = "concat_test",
+    srcs = ["concat_test.cc"],
+    deps = [
+        ":concat",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "group",
+    srcs = ["group.cc"],
+    hdrs = ["group.h"],
+    deps = [
+        "//engine/core:primitive_builder",
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:table_util",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "group_test",
+    srcs = ["group_test.cc"],
+    deps = [
+        ":group",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "group_agg",
+    srcs = ["group_agg.cc"],
+    hdrs = ["group_agg.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "group_agg_test",
+    srcs = ["group_agg_test.cc"],
+    deps = [
+        ":all_ops_register",
+        ":group_agg",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "group_he_sum",
+    srcs = ["group_he_sum.cc"],
+    hdrs = ["group_he_sum.h"],
+    copts = select({
+        "@platforms//cpu:x86_64": [
+            # HEU uses eigen...force avx on x64
+            "-mavx",
+        ],
+        "//conditions:default": [],
+    }),
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@gflags",
+        "@heu//heu/library/numpy",
+    ],
+)
+
+scql_cc_test(
+    name = "group_he_sum_test",
+    srcs = ["group_he_sum_test.cc"],
+    deps = [
+        ":group_he_sum",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "cast",
+    srcs = ["cast.cc"],
+    hdrs = ["cast.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "cast_test",
+    srcs = ["cast_test.cc"],
+    deps = [
+        ":cast",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "case_when",
+    srcs = ["case_when.cc"],
+    hdrs = ["case_when.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:const",
+    ],
+)
+
+scql_cc_test(
+    name = "case_when_test",
+    srcs = ["case_when_test.cc"],
+    deps = [
+        ":case_when",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "if",
+    srcs = ["if.cc"],
+    hdrs = ["if.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:casting",
+        "@spulib//libspu/kernel/hlo:const",
+    ],
+)
+
+scql_cc_test(
+    name = "if_test",
+    srcs = ["if_test.cc"],
+    deps = [
+        ":if",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "limit",
+    srcs = ["limit.cc"],
+    hdrs = ["limit.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:geometrical",
+    ],
+)
+
+scql_cc_test(
+    name = "limit_test",
+    srcs = ["limit_test.cc"],
+    deps = [
+        ":limit",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "arrow_func",
+    srcs = ["arrow_func.cc"],
+    hdrs = ["arrow_func.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "arrow_func_test",
+    srcs = ["arrow_func_test.cc"],
+    deps = [
+    ] + [
+        ":arrow_func",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "is_null",
+    srcs = ["is_null.cc"],
+    hdrs = ["is_null.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "is_null_test",
+    srcs = ["is_null_test.cc"],
+    deps = [
+        ":is_null",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "if_null",
+    srcs = ["if_null.cc"],
+    hdrs = ["if_null.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "if_null_test",
+    srcs = ["if_null_test.cc"],
+    deps = [
+        ":if_null",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "coalesce",
+    srcs = ["coalesce.cc"],
+    hdrs = ["coalesce.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "coalesce_test",
+    srcs = ["coalesce_test.cc"],
+    deps = [
+        ":coalesce",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "trigonometric",
+    srcs = ["trigonometric.cc"],
+    hdrs = ["trigonometric.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/operator:binary_base",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:basic_unary",
+    ],
+)
+
+scql_cc_test(
+    name = "trigonometric_test",
+    srcs = ["trigonometric_test.cc"],
+    deps = [
+        ":test_util",
+        ":trigonometric",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "bucket",
+    srcs = ["bucket.cc"],
+    hdrs = ["bucket.h"],
+    deps = [
+        "//engine/core:primitive_builder",
+        "//engine/framework:operator",
+        "//engine/util:concurrent_queue",
+        "//engine/util:table_util",
+        "//engine/util:tensor_util",
+        "//engine/util/psi:batch_provider",
+        "@org_apache_arrow//:arrow",
+    ],
+)
+
+scql_cc_test(
+    name = "bucket_test",
+    srcs = ["bucket_test.cc"],
+    deps = [
+        ":bucket",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_binary(
+    name = "bucket_bench",
+    srcs = ["bucket_bench.cc"],
+    deps = [
+        "@google_benchmark//:benchmark_main",
+    ] + [
+        ":bucket",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+        "//engine/util:filepath_helper",
+        "//engine/util/disk:arrow_reader",
+        "//engine/util/disk:arrow_writer",
+        "@yacl//yacl/utils:parallel",
+    ],
+)
+
+cc_library(
+    name = "window",
+    srcs = ["window.cc"],
+    hdrs = ["window.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:spu_io",
+        "//engine/util:table_util",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "window_test",
+    srcs = ["window_test.cc"],
+    deps = [
+        ":all_ops_register",
+        ":test_util",
+        ":window",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "secret_join",
+    srcs = ["secret_join.cc"],
+    hdrs = ["secret_join.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:prefix_sum",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+        "@spulib//libspu/kernel/hal:debug",
+        "@spulib//libspu/kernel/hal:public_helper",
+        "@spulib//libspu/kernel/hal:shape_ops",
+        "@spulib//libspu/kernel/hal:type_cast",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:basic_ternary",
+        "@spulib//libspu/kernel/hlo:basic_unary",
+        "@spulib//libspu/kernel/hlo:casting",
+        "@spulib//libspu/kernel/hlo:const",
+        "@spulib//libspu/kernel/hlo:geometrical",
+        "@spulib//libspu/kernel/hlo:indexing",
+        "@spulib//libspu/kernel/hlo:permute",
+        "@spulib//libspu/kernel/hlo:shuffle",
+        "@spulib//libspu/kernel/hlo:soprf",
+        "@spulib//libspu/kernel/hlo:sort",
+    ],
+)
+
+scql_cc_test(
+    name = "secret_join_test",
+    srcs = ["secret_join_test.cc"],
+    deps = [
+        ":secret_join",
+        ":test_util",
+        "//engine/core:tensor_constructor",
+    ],
+)
+
+cc_library(
+    name = "unary_base",
+    srcs = ["unary_base.cc"],
+    hdrs = ["unary_base.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:context_util",
+        "//engine/util:spu_io",
+        "//engine/util:tensor_util",
+    ],
+)
+
+cc_library(
+    name = "unary",
+    srcs = ["unary.cc"],
+    hdrs = ["unary.h"],
+    deps = [
+        ":unary_base",
+        "//engine/core:tensor_constructor",
+        "@spulib//libspu/kernel/hlo:basic_binary",
+        "@spulib//libspu/kernel/hlo:basic_unary",
+        "@spulib//libspu/kernel/hlo:const",
+    ],
+)
+
+scql_cc_test(
+    name = "unary_test",
+    srcs = ["unary_test.cc"],
+    deps = [
+        ":all_ops_register",
+        ":test_util",
+        ":unary",
+        "//engine/framework:registry",
+    ],
+)
+
+cc_library(
+    name = "replicate",
+    srcs = ["replicate.cc"],
+    hdrs = ["replicate.h"],
+    deps = [
+        "//engine/framework:operator",
+        "//engine/util:context_util",
+        "//engine/util:tensor_util",
+    ],
+)
+
+scql_cc_test(
+    name = "replicate_test",
+    srcs = ["replicate_test.cc"],
+    deps = [
+        ":replicate",
+        ":test_util",
+        ":unary",
+    ],
+)
