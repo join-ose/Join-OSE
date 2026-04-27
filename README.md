@@ -10,14 +10,15 @@ The codebase includes our proposed protocols built on the **SPU** framework, as 
 
 ### 1. Our Implementation (Based on SPU)
 Located in `Join-OSE/spu/sml/database/emulations/`.
+* **`OSE`**: Implementation of the Oblivious Sort Expansion (OSE) along with correctness verification.
 * **`Join-OM`**: Implements the Join-OM protocol from **AHK+** (*Secure Statistical Analysis on Multiple Datasets: Join and Group-By*) and our Join-OM protocol based on OSE. Includes checks to verify identical outputs.
 * **`Join-MM`**: Our main Join-MM protocol with working examples.
-* **`Join-MM-32`**: Parameterized version (32-bit inputs, adjustable size) for benchmarks against **BDG+** (*Secret-Shared Joins with Multiplicity from Aggregation Trees*).
-* **`Join-MM-64`**: Parameterized version (64-bit inputs, adjustable size) for benchmarks against **Scape** (*Scape: Scalable Collaborative Analytics System on Private Database with Malicious Security*).
+* **`Join-MM-32`**: Parameterized version (32-bit inputs, adjustable input size) for benchmarks against **BDG+** (*Secret-Shared Joins with Multiplicity from Aggregation Trees*).
+* **`Join-MM-64`**: Parameterized version (64-bit inputs, adjustable input size) for benchmarks against **Scape** (*Scape: Scalable Collaborative Analytics System on Private Database with Malicious Security*).
 
 ### 2. Scape
-Located in `Join-OSE/scql/engine/operator/`. 
-* **Note on Modification**: We have modified the `secret_join_test.cc` file specifically to support runtime profiling and performance testing for the Scape baseline.
+Located in `Join-OSE/scql/engine/operator/secret_join.cc`. 
+* **Note on Modification**: We have modified the `secret_join.cc` and `secret_join_test.cc` file specifically to support runtime profiling and performance testing for the Scape.
 
 ---
 
@@ -61,6 +62,7 @@ All core benchmarks are managed via Bazel. Run the following commands from insid
 
 | Protocol | Command | Comparison Target |
 | :--- | :--- | :--- |
+| **OSE** | `bazel run -c opt //sml/database/emulations:OSE` | Base |
 | **Join-OM** | `bazel run -c opt //sml/database/emulations:Join-OM` | AHK+ |
 | **Join-MM (32-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-32` | BDG+ |
 | **Join-MM (64-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-64` | Scape (semi2k) |
