@@ -64,6 +64,7 @@ All core benchmarks are managed via Bazel. Run the following commands from insid
 | :--- | :--- | :--- |
 | **OSE** | `bazel run -c opt //sml/database/emulations:OSE` | Base |
 | **Join-OM** | `bazel run -c opt //sml/database/emulations:Join-OM` | AHK+ |
+| **Join-MM** | `bazel run -c opt //sml/database/emulations:Join-MM` | |
 | **Join-MM (32-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-32` | BDG+ |
 | **Join-MM (64-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-64` | Scape (semi2k) |
 
