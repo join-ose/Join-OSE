@@ -57,6 +57,12 @@ Please open the following file: `Join-OSE/spu/src/libspu/kernel/hal/permute.cc` 
 
 ##  How to Run
 
+### Pre-requisite: Clear Bazel Cache
+Before running the benchmarks, we highly recommend clearing the Bazel cache to prevent any potential build conflicts from leftover historical files:
+```bash
+bazel clean --expunge
+```
+
 ### 1. Running Our Protocols
 All core benchmarks are managed via Bazel. Run the following commands from inside the `Join-OSE/spu/` directory:
 
