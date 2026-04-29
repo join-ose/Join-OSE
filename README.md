@@ -68,6 +68,19 @@ All core benchmarks are managed via Bazel. Run the following commands from insid
 | **Join-MM (32-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-32` | BDG+ |
 | **Join-MM (64-bit)** | `bazel run -c opt //sml/database/emulations:Join-MM-64` | Scape (semi2k) |
 
+
+#### Performance Note: Online vs. Total Overhead
+Please note that the distinction between online and offline phases **applies exclusively to our Join-MM protocols** (Join-MM, Join-MM-32, and Join-MM-64).
+
+* **Join-OM / OSE**: The console output represents the full execution Overhead (Online only).
+* **Join-MM Series**: The raw console output shows the **Total Execution Overhead**, which includes the offline phase. 
+
+In our paper, we report the **Online Phase Overhead** for Join-MM. To replicate the paper's data:
+1. Locate the execution overhead of the **`soPRF`** operation in the console output.
+2. Calculate the **Offline Overhead** as: `(soPRF_cost / 3) * 2`.
+3. **Paper Result (Online Overhead)** = `Total Console Overhead` - `Offline Overhead`.
+
+   
 ### 2. Running Scape Runtime Benchmark
 To test the runtime of the Scape baseline, navigate to the SCQL operator directory and execute the modified test:
 
